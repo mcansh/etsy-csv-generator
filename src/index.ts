@@ -54,7 +54,7 @@ async function fetchShopListings(
 
   const data = await typedFetch<ApiResponse>(url);
 
-  const items = data.results.filter((item) => !item.url.includes("download"));
+  const items = data.results.filter((item) => !item.is_digital);
 
   const nextPage = data.pagination.next_page;
 
