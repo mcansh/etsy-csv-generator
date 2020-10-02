@@ -10,8 +10,6 @@ import { ApiResponse, Result } from "./@types/shop";
 
 dotenv.config({ path: path.join(process.cwd(), ".env") });
 
-console.log(path.join(process.cwd(), ".env"));
-
 const {
   ETSY_SHOP_NAME,
   ETSY_API_KEY,
@@ -45,7 +43,7 @@ async function fetchShopListings(
   const url = format({
     protocol: "https",
     host: "openapi.etsy.com",
-    pathname: `/v2/shops/${ETSY_SHOP_NAME}/listings/active`,
+    pathname: `/v2/shops/${ETSY_SHOP_SLUG}/listings/active`,
     query: {
       api_key: ETSY_API_KEY,
       limit: 100,
