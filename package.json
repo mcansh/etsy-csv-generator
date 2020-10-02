@@ -1,0 +1,23 @@
+{
+  "name": "etsy-csv",
+  "version": "1.0.0",
+  "description": "Generate a csv file for your etsy store, originally made for an instagram shop bulk upload",
+  "license": "MIT",
+  "author": "Logan McAnsh <logan@mcan.sh> (https://mcan.sh)",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "csv-writer": "1.6.0",
+    "dotenv": "8.2.0",
+    "he": "1.2.0",
+    "node-fetch": "2.6.1"
+  },
+  "devDependencies": {
+    "@types/he": "1.1.1",
+    "@types/node": "14.11.2",
+    "@types/node-fetch": "2.5.7",
+    "typescript": "4.0.3"
+  }
+}
