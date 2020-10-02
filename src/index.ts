@@ -1,6 +1,7 @@
 import path from "path";
+import { format } from "url";
 
-import fetch from "node-fetch";
+import fetch, { RequestInfo, RequestInit } from "node-fetch";
 import { createObjectCsvWriter } from "csv-writer";
 import he from "he";
 import * as dotenv from "dotenv";
@@ -25,14 +26,35 @@ if (!ETSY_SHOP_NAME || !ETSY_API_KEY || !ETSY_SHOP_SLUG || !ETSY_DOMAIN) {
   );
 }
 
+const typedFetch = async <T extends any>(
+  input: RequestInfo,
+  init: RequestInit = {}
+): Promise<T> => {
+  const promise = await fetch(input, init);
+  if (!promise.ok) {
+    throw new Error(promise.statusText);
+  }
+
+  return promise.json() as T;
+};
+
 async function fetchShopListings(
   page: number,
   currentItems: Result[] = []
 ): Promise<any> {
-  const url = `https://openapi.etsy.com/v2/shops/${ETSY_SHOP_NAME}/listings/active?api_key=${ETSY_API_KEY}&limit=100&page=${page}`;
+  const url = format({
+    protocol: "https",
+    host: "openapi.etsy.com",
+    pathname: `/v2/shops/${ETSY_SHOP_NAME}/listings/active`,
+    query: {
+      api_key: ETSY_API_KEY,
+      limit: 100,
+      page,
+      includes: "MainImage",
+    },
+  });
 
-  const promise = await fetch(url);
-  const data = (await promise.json()) as ApiResponse;
+  const data = await typedFetch<ApiResponse>(url);
 
   const items = data.results.filter((item) => !item.url.includes("download"));
 
@@ -67,10 +89,11 @@ async function fetchShopListings(
       condition: "new",
       price: `${item.price} ${item.currency_code}`,
       link: item.url.replace("https://www.etsy.com", ETSY_DOMAIN),
-      image_link:
-        "https://i.etsystatic.com/17015747/r/il/5ad817/2277807796/il_1588xN.2277807796_rd07.jpg",
+      image_link: item.MainImage.url_fullxfull,
       brand: ETSY_SHOP_NAME,
-      google_product_category: ETSY_CATEGORY ?? "",
+      google_product_category: ETSY_CATEGORY
+        ? ETSY_CATEGORY
+        : item.taxonomy_path.join(" > ") || "",
     };
   });
 
