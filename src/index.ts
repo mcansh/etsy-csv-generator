@@ -26,7 +26,7 @@ if (!ETSY_SHOP_NAME || !ETSY_API_KEY || !ETSY_SHOP_SLUG || !ETSY_DOMAIN) {
 
 const args = process.argv.slice(2);
 
-const typedFetch = async <T extends any>(
+const typedFetch = async <T>(
   input: RequestInfo,
   init: RequestInit = {}
 ): Promise<T> => {
@@ -35,13 +35,13 @@ const typedFetch = async <T extends any>(
     throw new Error(promise.statusText);
   }
 
-  return promise.json() as T;
+  return promise.json();
 };
 
 async function fetchShopListings(
   page: number,
   currentItems: Result[] = []
-): Promise<any> {
+): Promise<void> {
   const filterDigitalItems = args[0] === '--filter-digital';
 
   const url = format({
