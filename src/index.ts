@@ -24,6 +24,8 @@ if (!ETSY_SHOP_NAME || !ETSY_API_KEY || !ETSY_SHOP_SLUG || !ETSY_DOMAIN) {
   );
 }
 
+const args = process.argv.slice(2);
+
 const typedFetch = async <T extends any>(
   input: RequestInfo,
   init: RequestInit = {}
@@ -40,6 +42,8 @@ async function fetchShopListings(
   page: number,
   currentItems: Result[] = []
 ): Promise<any> {
+  const filterDigitalItems = args[0] === '--filter-digital';
+
   const url = format({
     protocol: 'https',
     host: 'openapi.etsy.com',
@@ -54,7 +58,9 @@ async function fetchShopListings(
 
   const data = await typedFetch<ApiResponse>(url);
 
-  const items = data.results.filter((item) => !item.is_digital);
+  const items = filterDigitalItems
+    ? data.results.filter((item) => !item.is_digital)
+    : data.results;
 
   const nextPage = data.pagination.next_page;
 
