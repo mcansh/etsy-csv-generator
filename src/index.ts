@@ -1,30 +1,10 @@
-import path from 'path';
 import { format } from 'url';
 
 import fetch, { RequestInfo, RequestInit } from 'node-fetch';
 import { createObjectCsvWriter } from 'csv-writer';
 import he from 'he';
-import * as dotenv from 'dotenv';
 
 import { ApiResponse, Result } from './@types/shop';
-
-dotenv.config({ path: path.join(process.cwd(), '.env') });
-
-const {
-  ETSY_SHOP_NAME,
-  ETSY_API_KEY,
-  ETSY_SHOP_SLUG,
-  ETSY_DOMAIN,
-  ETSY_CATEGORY,
-} = process.env;
-
-if (!ETSY_SHOP_NAME || !ETSY_API_KEY || !ETSY_SHOP_SLUG || !ETSY_DOMAIN) {
-  throw new Error(
-    `Missing one of the following environment variables 'ETSY_SHOP_NAME', 'ETSY_API_KEY', 'ETSY_SHOP_SLUG', 'ETSY_DOMAIN'`
-  );
-}
-
-const args = process.argv.slice(2);
 
 const typedFetch = async <T>(
   input: RequestInfo,
@@ -38,18 +18,47 @@ const typedFetch = async <T>(
   return promise.json();
 };
 
+export interface Options {
+  /**
+   * @description the name of your shop
+   */
+  shop: string;
+  /**
+   * @description the slug of your shop, found after https://etsy.com/
+   */
+  slug: string;
+  /**
+   * @description the custom domain you have pointed to your shop
+   */
+  domain: string;
+  /**
+   * @description the api key you got from etsy.
+   */
+  apiKey: string;
+  /**
+   * @description a fallback taxonomy path
+   * @see https://www.google.com/basepages/producttype/taxonomy.en-US.txt
+   * @example Arts & Entertainment > Party & Celebration > Gift Giving > Greeting & Note Cards
+   */
+  fallbackTaxonomy?: string;
+  /**
+   * @description whether or not to filter out digital listings
+   * @default true
+   */
+  noDigital: boolean;
+}
+
 async function fetchShopListings(
+  options: Options,
   page: number,
   currentItems: Result[] = []
 ): Promise<void> {
-  const filterDigitalItems = args[0] === '--filter-digital';
-
   const url = format({
     protocol: 'https',
     host: 'openapi.etsy.com',
-    pathname: `/v2/shops/${ETSY_SHOP_SLUG}/listings/active`,
+    pathname: `/v2/shops/${options.slug}/listings/active`,
     query: {
-      api_key: ETSY_API_KEY,
+      api_key: options.apiKey,
       limit: 100,
       page,
       includes: 'MainImage',
@@ -58,7 +67,7 @@ async function fetchShopListings(
 
   const data = await typedFetch<ApiResponse>(url);
 
-  const items = filterDigitalItems
+  const items = options.noDigital
     ? data.results.filter((item) => !item.is_digital)
     : data.results;
 
@@ -66,10 +75,10 @@ async function fetchShopListings(
 
   const merged = [...currentItems, ...items];
 
-  if (nextPage) return fetchShopListings(nextPage, merged);
+  if (nextPage) return fetchShopListings(options, nextPage, merged);
 
   const csvWriter = createObjectCsvWriter({
-    path: './output.csv',
+    path: `./${options.slug}.csv`,
     header: [
       { id: 'id', title: 'id' },
       { id: 'title', title: 'title' },
@@ -92,16 +101,15 @@ async function fetchShopListings(
       availability: 'in stock',
       condition: 'new',
       price: `${item.price} ${item.currency_code}`,
-      link: item.url.replace('https://www.etsy.com', ETSY_DOMAIN),
+      link: item.url.replace('https://www.etsy.com', options.domain),
       image_link: item.MainImage.url_fullxfull,
-      brand: ETSY_SHOP_NAME,
-      google_product_category: ETSY_CATEGORY
-        ? ETSY_CATEGORY
-        : item.taxonomy_path.join(' > ') || '',
+      brand: options.shop,
+      google_product_category:
+        item.taxonomy_path?.join(' > ') ?? options.fallbackTaxonomy ?? '',
     };
   });
 
   return csvWriter.writeRecords(records);
 }
 
-fetchShopListings(1);
+export { fetchShopListings };

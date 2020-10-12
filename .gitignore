@@ -1,6 +1,6 @@
 .ds_store
 node_modules
 dist
-output.csv
+*.csv
 *.env
 .eslintcache
