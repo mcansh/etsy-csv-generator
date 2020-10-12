@@ -1,5 +1,5 @@
 {
-  "name": "@mcansh/etsy-csv",
+  "name": "@mcansh/etsy-csv-generator",
   "version": "1.1.0",
   "description": "Generate a csv file for your etsy store, originally made for an instagram shop bulk upload",
   "license": "MIT",
